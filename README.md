@@ -1,3 +1,6 @@
+![Alt text](/dynamic_docker-Page-1.jpg)
+
+
 # 🚀 AWS Containerized Web Application Infrastructure
 
 This project demonstrates how to build and deploy a **containerized web application** on AWS using a secure and scalable **3-tier architecture**. It leverages modern DevOps practices with Docker, GitHub, and AWS services to create a production-ready environment.
