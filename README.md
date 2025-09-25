@@ -1,8 +1,3 @@
-Here’s a **ready-to-publish `README.md`** for your AWS project. I’ve structured it to look professional, beginner-friendly, and polished for GitHub.
-
----
-
-````markdown
 # 🚀 AWS Containerized Web Application Infrastructure
 
 This project demonstrates how to build and deploy a **containerized web application** on AWS using a secure and scalable **3-tier architecture**. It leverages modern DevOps practices with Docker, GitHub, and AWS services to create a production-ready environment.
@@ -137,14 +132,3 @@ flyway -url=jdbc:mysql://<rds-endpoint>:3306/<db-name> -user=<db-username> -pass
 Contributions are welcome! Please open an issue or submit a pull request with improvements.
 
 ---
-
-## 📜 License
-
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
-
----
-
-```
-
----
-
