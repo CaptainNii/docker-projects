@@ -1,0 +1,202 @@
+Dynamic Docker App
+
+#This is the VPC used.
+
+VPC: Dev VPC = 10.0.0.0/16
+	After creating the VPC, Enable the DNS hostname
+	Create Internet Gateway and attached it to the VPC
+
+AZ = us-east-1a
+	Public Subnet AZ1	    = 10.0.0.0/24
+	Private App Subnet AZ1  = 10.0.2.0/24
+	Private Data Subnet AZ1 = 10.0.4.0/24
+
+AZ = us-east-1b
+	Public Subnet AZ2	    = 10.0.1.0/24
+	Private App Subnet AZ2  = 10.0.3.0/24
+	Private Data Subnet AZ2 = 10.0.5.0/24
+
+Enable the auto-assign IP to the public subnet
+	select Public Subnet AZ1: ==> Edit subnet setting ==> Enable auto-assign public IPv4.
+	select Public Subnet AZ2: ==> Edit subnet setting ==> Enable auto-assign public IPv4.
+
+Create a NAT Gateways (App-NGW, Data-NGW) in the Public Subnet: To allow private subnet get access to the internet, but users on the internet wont get access to the private subnet. 
+
+Create Public and Private Router Tables
+
+Attached the NAT Gateway to the Public Route Table
+Attached the Internet Gateway to the Private Route Table
+
+Create Security Groups
+	Application Load Balancer Security Group (ALB-SG)
+	Open traffic on port 80 & 443 from anywhere 
+
+Bastion Host Security Group (Bastion Host)
+	Port 22. Source = Your IP (if you don't select your IP, you will get timeout, this is the reason i leant)
+
+Container Security Group
+	Port 80 and 443. Source = ALB-SG
+
+Database Security Group
+	Port 3306 (MySQL/A) Source = Container-SG
+	Port 3306 (Custom)  Source = Bastion Host-SG
+
+Create Database (RDS)
+	create subnet group == database subnet in the two private data subnet 
+	Create the RDS instance == (MySQL), the latest version, Dev/Test, or free tire
+
+Register your domain name if you don't have it already. 
+
+Create you github repository
+	application-codes, make it private add a ReadMe file
+	clone your repository with the ssh in powershall.
+	this is to hold you application codes.
+
+	Add the code to the repository 
+	commit to github. 
+
+Create a repository to store the Dockerfile. 
+	docker-projects in a public, add a Readme file
+	clone the repository (in your preferred directory) i used the admin or user directory
+
+Create a Personal Access Token
+	click you profile at the top right == setting, scroll down == developer setting == personal access token == classic == generate token == generate new token classic, name your token and select expiration date. select the repo, == scroll down and==generate token. 
+	Note: Copy your personal Access token and save it. You will need it.
+
+Create a Dockerfile to build your docker image. 
+	Open VSC  == Open the Docker project folder 
+	Create a folder for the application (New folder and name it e.g rentzone)
+	create a file in the folder you created (name it Dockerfile)
+	write the code or copy and paste it. 
+	replace the information's
+
+	Leave the .env for now
+
+Replace AppServiceProvider.php
+	copy the name (AppServiceProvider.php) cope and paste the docke and save, but DON NOT Commit.
+
+Create gitignore 
+	First rename the Dockerfile to Dockerfile-reference
+	create a new file in (.gitignore)
+	Add the file in the gitignor list, and save it.
+
+Create & Add Your Build Argument.
+	Right click in the rentzone folder and create a new file (named it Dockerfile)
+	copy and paste the code. or write the codes, Save it. Your sensitive information should be in you variable argument
+
+Create Script to build the Dockerfile
+	create and file under rentzone == build_image.ps1 and paste the commands in there. 
+	copy the values from the Dockerfile-reference file, and from your RDS instance, it should be in ''
+	And add it to the .gitignore file and save it. 
+	and commit to you repository
+
+Make the Script Executable
+	run this command "Set-ExecutionPolicy -ExecutionPolicy Unrestricted" in PowerShall"
+	run the PowerShall as Admin.
+
+Build the Docker Image
+
+	Click the build_image.ps1 and open in integrated Terminal
+	type .\build_image.ps1  (Note this is the name of the file.)
+
+Install AWS Command Line (If you don't have it already)
+
+Create an IAM user with programmatic Access (if you don't have it already)
+
+(in CMD)
+Configure your AWS access
+	aws configure
+	enter the values
+
+Create a Repository in Amazon ECR with AWS CLI
+	type: aws ecr create-repository --repository-name <your-repo_Name> --region <your_Region>
+	open the VSC and open in integrated terminal and paste this command.
+
+Push the Docker image to AmazonECR
+	#login and retag the image
+	aws ecr get-login-password | docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.<region>.amazon.com
+    docker tag <image-tag> <repository-url>
+
+	#push docker image to ecr repository
+	docker push <repository-url>
+	
+Create a keypair to SSH in the EC2 instance
+
+Open CMD 
+	change to the directory that have your private keypair.
+	or you can copy and paste the keypair to the PS terminal.
+
+Sit up a Bastion Host
+	create and Bastion Host in the Public Subnet
+
+Download and install Flyway 
+	In the flyway folder copy and paste the command into the sql folder inside the flyway folder
+	select the conf == flyway.conf and paste your command
+	And enter the rds information to it. (put your database name after the :3306/)
+	copy and paste the sql txt file into the sql folder inside the flyway folder.
+	select the drop down and rename the rentzone-db.sql to V1__rentzone-db.sql
+
+Migrate the SQL file to RDS via Flyway. 
+	ssh -i <key_pair.pem> ec2-user@<public-ip> -L 3306:<rds-endpoint>:3306 -N
+	open a new terminal (Not the Integrated terminal) and change the directory to the keypair directory. cd ..
+	paste and run the command. 
+	Go back to the integrated terminal under flyway
+	and type .\flyway migrate
+
+	Note: I manually created the "flyway.conf" file and also created sql folder inside the flyway folder, i copied only the flyway folder from program files to my preferred folder. note that i only copied the flyway folder not the entire flyway-desktop folder.
+
+Create Application Balancer
+	create your Target Group 
+	==> IP addresses ==> Select you VPC and create target-group
+	Create your ALB
+    ==> with your HTTP listener (Port 80)
+
+Register your Certificate Manager (If you dont have one already.)
+	After.. create an HTTPS Listener (Port 443)
+	edit HTTP to redirect to HTTPS
+
+Create Environment file 
+	open VSC, right click rentzone and create new file and named is rentzone.env
+	paste your env varibles, fill it up
+	add it to the .gitignore
+	save it, then commit (create env file)
+
+Create S3 Bucket to store the Environment file.
+	upload the environment file into the S3 bucket (The file should in in your docker project folder ==>redzone, in your saved directory)
+
+Create IAM Role for the ECS Task Definition.
+	Select AWS == Usercase == Elastic container service == Elastic container service tesk
+	permission = AmazonECSTaskExecutionRole
+	Add inline Policies
+	- Add permission == Read: GetObject
+	- Add additional Permission == Read: Get bucket location
+
+Create ECS Cluster
+	1. create a cluster
+	2. create a task definition 
+		under container evn. upoad the env file from your S3 bucket
+		under task execution role add the role you created.
+	3. create ECS service
+		turn off the public IP because the container is to be deploy in the Private App Subnet.
+
+Create a record set in Route 53 to enable users access your app from your domain.
+
+Cleaning Up 
+	ECS Services 
+	Cluster
+	Task Definition
+	ALB
+	Target Group
+	RDS
+		CloudWatch == log groups and delete your log the system created
+
+	Delete the A Record from Router 53
+
+	Security Groups
+		Database -SG
+		Bastion Host = But Terminate the Bastion Host first.
+		ALB-SG
+	Nat Gateways
+	release the IPs
+	RDS Subnet
+	VPC
